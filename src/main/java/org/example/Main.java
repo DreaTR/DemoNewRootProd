@@ -40,7 +40,7 @@ public class Main {
         //URL url = new URL("http://localhost:8080/api/v1/kafka/publish");
 
         //Skicka Payload via WebAPI via en Request
-        //sendToWebApi(myObj);
+        sendToWebApi(myObj);
 
         //Hämta data från topic
         getDataFromKafka("demoguides_json");
