@@ -27,14 +27,14 @@ public class Main {
         User user = new User();
 
         /*Logik flr att låta användaren mata in data*/
-        user.setId(6);
-        user.setFirstName("Kevin");
-        user.setLastName("Hart");
+        user.setMovieTitle("The Conjuring 2");
+        user.setMovieGenre("Horror");
+        user.setReleaseDate(2016);
 
         JSONObject myObj = new JSONObject();
-        myObj.put("id", user.getId());
-        myObj.put("firstName", user.getFirstName());
-        myObj.put("lastName", user.getLastName());
+        myObj.put("movieTitle", user.getMovieTitle());
+        myObj.put("movieGenre", user.getMovieGenre());
+        myObj.put("releaseDate", user.getReleaseDate());
 
 
         //URL url = new URL("http://localhost:8080/api/v1/kafka/publish");
