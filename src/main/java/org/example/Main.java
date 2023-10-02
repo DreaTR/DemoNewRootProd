@@ -13,20 +13,72 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.json.simple.JSONObject;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.Scanner;
+
 
 public class Main {
     public static void main(String[] args) throws org.json.simple.parser.ParseException {
         System.out.println("Hello world!");
 
+        userMenu();
+
+    }
+    public static void userMenu() throws org.json.simple.parser.ParseException {
+
+        String userChoice = "";
+
+        do {
+            printMenu();
+
+            Scanner scan = new Scanner(System.in);
+            System.out.println("Gör ett följande val");
+            System.out.println("====================");
+            userChoice = scan.nextLine();
+
+            switch (userChoice){
+                case "1":
+                    userInputForKafka();
+                    break;
+                case"2":
+                    getDataFromKafka("demoguides_json");
+                    break;
+                case"0":
+                    System.out.println("Avslutar programmet");
+                default:
+                    break;
+
+            }
+            if(!userChoice.equals("0")){
+                System.out.println("Press any key to continue");
+                scan.nextLine();
+            }
+        } while (!userChoice.equals("0"));
+
+    }
+
+    private static void printMenu() {
+
+        System.out.println("Gör ett val");
+        System.out.println("1. Skriv data i Kafka Servern");
+        System.out.println("2. Hämta data från Kafka Server");
+        System.out.println("0. Avsluta programmet");
+
+    }
+    private static void userInputForKafka() {
+
         User user = new User();
 
-        /*Logik flr att låta användaren mata in data*/
+        /*Logik för att låta användaren mata in data*/
+
         user.setMovieTitle("The Conjuring 2");
         user.setMovieGenre("Horror");
         user.setReleaseDate(2016);
@@ -36,19 +88,15 @@ public class Main {
         myObj.put("movieGenre", user.getMovieGenre());
         myObj.put("releaseDate", user.getReleaseDate());
 
-
         //URL url = new URL("http://localhost:8080/api/v1/kafka/publish");
 
         //Skicka Payload via WebAPI via en Request
         sendToWebApi(myObj);
 
-        //Hämta data från topic
-        getDataFromKafka("demoguides_json");
-
-        System.out.println("Project done");
     }
-    public static void sendToWebApi(JSONObject myObj){
 
+    public static String sendToWebApi(JSONObject myObj){
+        String returnResp = "";
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost("http://localhost:8080/api/v1/kafka/publish");
 
@@ -63,22 +111,28 @@ public class Main {
                 if (responseEntity != null) {
                     String responseString = EntityUtils.toString(responseEntity);
                     System.out.println("Svar från server: " + responseString);
+                    returnResp = responseString;
                 }
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
         } catch (IOException e) { e.printStackTrace(); }
+        return returnResp;
 
     }
 
-    public static void getDataFromKafka(String topicName) throws org.json.simple.parser.ParseException {
+    public static ArrayList<User> getDataFromKafka(String topicName) {
 
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "fetchingGroup");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
+
+        //props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         //props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.springframework.kafka.support.serializer.JsonDeserializer");
+        //props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.springframework.kafka.support.serializer.JsonDeserializer");
+
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put("spring.json.trusted.packages", "*");
 
 
@@ -86,18 +140,33 @@ public class Main {
         //consumer.subscribe(Collections.singletonList(topicName));
         consumer.assign(Collections.singletonList(new TopicPartition(topicName, 0)));
 
+        //Gå till början av Topic
         consumer.seekToBeginning(consumer.assignment());
+
+        //Skapa User lista
+        ArrayList<User> users = new ArrayList<User>();
+
 
         //WhileLoop osm hämtar i JSON format
         while (true) {
             ConsumerRecords<String, User> records = consumer.poll(Duration.ofMillis(100));
+            if(records.isEmpty()) continue;
             for (ConsumerRecord<String, User> record : records) {
-                System.out.println(record);
+                users.add(record.value());
 
 
             }
+            break;
         }
+        for(User user : users){
+            System.out.println(user.getMovieTitle());
+            System.out.println(user.getMovieGenre());
+            System.out.println(user.getReleaseDate());
+
+        }
+        return users;
 
 
     }
+
 }
