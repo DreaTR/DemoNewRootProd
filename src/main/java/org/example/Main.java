@@ -41,7 +41,6 @@ public class Main {
 
             Scanner scan = new Scanner(System.in);
             System.out.println("Gör ett följande val");
-            System.out.println("====================");
             userChoice = scan.nextLine();
 
             switch (userChoice){
@@ -79,9 +78,9 @@ public class Main {
 
         /*Logik för att låta användaren mata in data*/
 
-        user.setMovieTitle("The Conjuring 2");
+        user.setMovieTitle("Insidous");
         user.setMovieGenre("Horror");
-        user.setReleaseDate(2016);
+        user.setReleaseDate(2010);
 
         JSONObject myObj = new JSONObject();
         myObj.put("movieTitle", user.getMovieTitle());
